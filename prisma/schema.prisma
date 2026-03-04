@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Спортивные секции
+model SportSection {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  name             String
+  shortDescription String
+  fullDescription  String    // было @db.Text, теперь просто String
+  ageInfo          String
+  category         String?
+
+  // Медиа
+  coverImage       String?
+  heroImages       String?   // JSON array
+  gallery          String?   // JSON array
+
+  // Связи
+  abonements       Abonement[]
+  trainers         Trainer[]
+
+  isActive         Boolean   @default(true)
+  isFeatured       Boolean?  @default(false)
+  schedule         String?
+  location         String?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+// Абонементы
+model Abonement {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  currency    String       @default("BYN")
+  duration    String
+  features    String?      // JSON array
+  isPopular   Boolean?     @default(false)
+
+  sectionId   String
+  section     SportSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// Тренеры
+model Trainer {
+  id          String       @id @default(cuid())
+  name        String
+  position    String
+  photo       String?
+  description String?      // было @db.Text, теперь просто String?
+  order       Int          @default(0)
+
+  sectionId   String
+  section     SportSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// Посты блога
+model BlogPost {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  title          String
+  excerpt        String?   // было @db.Text, теперь просто String?
+  content        String    // было @db.Text, теперь просто String
+
+  featuredImage  String?   // JSON с url, alt, width, height
+  gallery        String?   // JSON array
+
+  author         String?   // JSON с name
+  category       String?   // JSON с id, name, slug, color
+
+  tags           String?   // JSON array
+
+  publishedAt    DateTime?
+  readTime       Int?
+  views          Int       @default(0)
+
+  isFeatured     Boolean   @default(false)
+  isPinned       Boolean   @default(false)
+
+  seo            String?   // JSON с metaTitle, metaDescription
+
+  published      Boolean   @default(false)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// Отделения (departments)
+model Department {
+  id             String    @id @default(cuid())
+  seoSlug        String    @unique
+  internalSlug   String    @unique
+  name           String
+  title          String
+  description    String    // было @db.Text, теперь просто String
+  fullDescription String   // было @db.Text, теперь просто String
+
+  heroImage      String?
+  coverImage     String?
+
+  coaches        String?   // JSON array
+  locations      String?   // JSON array
+  ageInfo        String
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// Прокат инвентаря
+model RentalItem {
+  id             String    @id @default(cuid())
+  category       String    // "winter" | "summer"
+  name           String
+  emoji          String
+  description    String?
+  priceDay       Float
+  priceWeekend   Float
+  priceWeek      Float
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// Заявки
+model Application {
+  id               String   @id @default(cuid())
+  name             String
+  phone            String
+  email            String?
+  childAge         Int?
+  sport            String?
+  message          String?   // было @db.Text, теперь просто String?
+
+  selectedAbonement String?  // JSON
+
+  source           String    // ApplicationSource
+  sectionId        String?
+  sectionName      String?
+
+  status           String    // ApplicationStatus
+  statusHistory    String?   // JSON array
+  managerNotes     String?   // JSON array
+  assignedTo       String?
+  assignedToName   String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// Пользователи админки
+model AdminUser {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  password       String    // будет хеширован
+  name           String
+  role           String    // UserRole
+
+  avatar         String?
+  phone          String?
+  position       String?
+  bio            String?   // было @db.Text, теперь просто String?
+
+  lastLogin      DateTime?
+  isActive       Boolean   @default(true)
+  permissions    String?   // JSON array
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// SEO настройки
+model SeoData {
+  id             String    @id @default(cuid())
+  page           String    @unique
+  path           String
+  title          String?
+  description    String?   // было @db.Text, теперь просто String?
+  keywords       String?   // было @db.Text, теперь просто String?
+  ogImage        String?
+  ogTitle        String?
+  ogDescription  String?   // было @db.Text, теперь просто String?
+  robots         String?   @default("index, follow")
+  canonical      String?
+  isActive       Boolean   @default(true)
+
+  updatedAt      DateTime  @updatedAt
+  updatedBy      String?
+}
