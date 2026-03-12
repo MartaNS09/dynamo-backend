@@ -108,35 +108,24 @@ export class SectionsService {
       throw new NotFoundException(`Секция с ID ${id} не найдена`);
     }
 
-    // Убираем abonements и trainers из данных - их будем обновлять отдельно
-    const { abonements, trainers, ...sectionData } = updateSectionDto;
-
+    // Обновляем только поля секции
     const data = {
-      ...sectionData,
-      heroImages: sectionData.heroImages
-        ? JSON.stringify(sectionData.heroImages)
+      ...updateSectionDto,
+      heroImages: updateSectionDto.heroImages
+        ? JSON.stringify(updateSectionDto.heroImages)
         : undefined,
-      gallery: sectionData.gallery
-        ? JSON.stringify(sectionData.gallery)
+      gallery: updateSectionDto.gallery
+        ? JSON.stringify(updateSectionDto.gallery)
         : undefined,
     };
 
-    // Обновляем только секцию, без связанных записей
-    const updatedSection = await this.prisma.sportSection.update({
+    await this.prisma.sportSection.update({
       where: { id },
       data,
-      // Убираем include - не нужно подгружать abonements и trainers
     });
 
-    // Возвращаем обновленную секцию (без abonements и trainers)
-    return {
-      ...updatedSection,
-      heroImages: updatedSection.heroImages
-        ? JSON.parse(updatedSection.heroImages)
-        : [],
-      gallery: updatedSection.gallery ? JSON.parse(updatedSection.gallery) : [],
-      // Не возвращаем abonements и trainers
-    };
+    // Возвращаем полную секцию с абонементами и тренерами
+    return this.findOne(id);
   }
 
   async remove(id: string) {
