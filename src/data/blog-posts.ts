@@ -1,4 +1,3 @@
-// import { BlogPost, BlogCategory } from "@/types/blog.types";
 import { BlogPost, BlogCategory } from './blog.types';
 
 export const blogCategories: BlogCategory[] = [
