@@ -25,7 +25,9 @@ jobs:
             git checkout main
             git reset --hard origin/main
 
-            npm ci
+            pwd
+            grep '"name": "dynamo-backend"' package.json
+            npm install --no-audit --no-fund
             npx prisma generate
             npx prisma migrate deploy
             npm run build
