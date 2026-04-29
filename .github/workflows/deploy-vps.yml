@@ -33,6 +33,6 @@ jobs:
 
             APP_NAME="dynamo-backend"
             pm2 delete "$APP_NAME" > /dev/null 2>&1 || true
-            pm2 start dist/src/main.js --name "$APP_NAME"
+            pm2 start dist/src/main.js --name "$APP_NAME" --cwd "${{ secrets.BACKEND_DEPLOY_PATH }}"
 
             pm2 save
