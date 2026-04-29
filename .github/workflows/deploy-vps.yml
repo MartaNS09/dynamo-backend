@@ -27,7 +27,7 @@ jobs:
 
             npm install --include=dev --legacy-peer-deps --no-audit --no-fund
             npx prisma generate
-            npx prisma db push --accept-data-loss
+            runuser -u postgres -- sh -c "cd '${{ secrets.BACKEND_DEPLOY_PATH }}' && DATABASE_URL=postgresql://postgres@localhost/dynamo_prod?host=/var/run/postgresql npx prisma db push --accept-data-loss"
             npm run build
             test -f dist/src/main.js
 
