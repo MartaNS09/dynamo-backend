@@ -28,10 +28,11 @@ jobs:
             npm install --include=dev --legacy-peer-deps --no-audit --no-fund
             npx prisma generate
             npx prisma migrate deploy
-            npm run build || true
+            npm run build
+            test -f dist/main.js
 
             APP_NAME="dynamo-backend"
             pm2 delete "$APP_NAME" > /dev/null 2>&1 || true
-            pm2 start npm --name "$APP_NAME" -- run start:prod
+            pm2 start dist/main.js --name "$APP_NAME"
 
             pm2 save
