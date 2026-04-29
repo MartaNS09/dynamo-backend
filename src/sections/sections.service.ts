@@ -6,10 +6,40 @@ import { CreateSectionDto, UpdateSectionDto } from './dto/create-section.dto';
 export class SectionsService {
   constructor(private prisma: PrismaService) {}
 
+  private mapTrainerFromDb(trainer: any) {
+    return {
+      ...trainer,
+      paymentAccounts: trainer.paymentAccounts
+        ? JSON.parse(trainer.paymentAccounts)
+        : [],
+    };
+  }
+
+  private mapTrainerToDb(trainer: any, sectionId: string, order: number) {
+    const normalizedAccounts = (trainer.paymentAccounts || [])
+      .map((item: any) => ({
+        sessions: item.sessions,
+        accountNumber: item.accountNumber,
+      }))
+      .filter((item: any) => item.sessions && item.accountNumber);
+
+    return {
+      name: trainer.name,
+      position: trainer.position,
+      photo: trainer.photo || null,
+      description: trainer.description || null,
+      paymentAccounts:
+        normalizedAccounts.length > 0 ? JSON.stringify(normalizedAccounts) : null,
+      order,
+      sectionId,
+    };
+  }
+
   async create(createSectionDto: CreateSectionDto) {
-    // Преобразуем массивы в JSON строки
+    const { abonements = [], trainers = [], ...sectionData } = createSectionDto;
+
     const data = {
-      ...createSectionDto,
+      ...sectionData,
       heroImages: createSectionDto.heroImages
         ? JSON.stringify(createSectionDto.heroImages)
         : null,
@@ -18,13 +48,32 @@ export class SectionsService {
         : null,
     };
 
-    return this.prisma.sportSection.create({
+    const created = await this.prisma.sportSection.create({
       data,
-      include: {
-        abonements: true,
-        trainers: true,
-      },
     });
+
+    if (abonements.length > 0) {
+      await this.prisma.abonement.createMany({
+        data: abonements.map((a) => ({
+          name: a.name,
+          description: a.description || null,
+          price: a.price,
+          currency: a.currency || 'BYN',
+          duration: a.duration,
+          features: a.features ? JSON.stringify(a.features) : null,
+          isPopular: a.isPopular ?? false,
+          sectionId: created.id,
+        })),
+      });
+    }
+
+    if (trainers.length > 0) {
+      await this.prisma.trainer.createMany({
+        data: trainers.map((t, index) => this.mapTrainerToDb(t, created.id, index)),
+      });
+    }
+
+    return this.findOne(created.id);
   }
 
   async findAll() {
@@ -45,6 +94,7 @@ export class SectionsService {
           ...a,
           features: a.features ? JSON.parse(a.features) : [],
         })) || [],
+      trainers: section.trainers?.map((t) => this.mapTrainerFromDb(t)) || [],
     }));
   }
 
@@ -71,6 +121,7 @@ export class SectionsService {
           ...a,
           features: a.features ? JSON.parse(a.features) : [],
         })) || [],
+      trainers: section.trainers?.map((t) => this.mapTrainerFromDb(t)) || [],
     };
   }
 
@@ -96,6 +147,7 @@ export class SectionsService {
           ...a,
           features: a.features ? JSON.parse(a.features) : [],
         })) || [],
+      trainers: section.trainers?.map((t) => this.mapTrainerFromDb(t)) || [],
     };
   }
 
@@ -108,8 +160,7 @@ export class SectionsService {
       throw new NotFoundException(`Секция с ID ${id} не найдена`);
     }
 
-    // Убираем abonements и trainers из данных - их будем обновлять отдельно
-    const { abonements, trainers, ...sectionData } = updateSectionDto;
+    const { abonements = [], trainers = [], ...sectionData } = updateSectionDto;
 
     const data = {
       ...sectionData,
@@ -121,22 +172,36 @@ export class SectionsService {
         : undefined,
     };
 
-    // Обновляем только секцию, без связанных записей
-    const updatedSection = await this.prisma.sportSection.update({
+    await this.prisma.sportSection.update({
       where: { id },
       data,
-      // Убираем include - не нужно подгружать abonements и trainers
     });
 
-    // Возвращаем обновленную секцию (без abonements и trainers)
-    return {
-      ...updatedSection,
-      heroImages: updatedSection.heroImages
-        ? JSON.parse(updatedSection.heroImages)
-        : [],
-      gallery: updatedSection.gallery ? JSON.parse(updatedSection.gallery) : [],
-      // Не возвращаем abonements и trainers
-    };
+    await this.prisma.abonement.deleteMany({ where: { sectionId: id } });
+    await this.prisma.trainer.deleteMany({ where: { sectionId: id } });
+
+    if (abonements.length > 0) {
+      await this.prisma.abonement.createMany({
+        data: abonements.map((a) => ({
+          name: a.name,
+          description: a.description || null,
+          price: a.price,
+          currency: a.currency || 'BYN',
+          duration: a.duration,
+          features: a.features ? JSON.stringify(a.features) : null,
+          isPopular: a.isPopular ?? false,
+          sectionId: id,
+        })),
+      });
+    }
+
+    if (trainers.length > 0) {
+      await this.prisma.trainer.createMany({
+        data: trainers.map((t, index) => this.mapTrainerToDb(t, id, index)),
+      });
+    }
+
+    return this.findOne(id);
   }
 
   async remove(id: string) {

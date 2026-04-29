@@ -59,6 +59,7 @@ model Trainer {
   position    String
   photo       String?
   description String?      // было @db.Text, теперь просто String?
+  paymentAccounts String?  // JSON array: sessions/price/accountNumber
   order       Int          @default(0)
 
   sectionId   String
