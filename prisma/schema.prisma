@@ -152,6 +152,11 @@ model Application {
   source           String    // ApplicationSource
   sectionId        String?
   sectionName      String?
+  consentGiven     Boolean   @default(false)
+  consentAt        DateTime?
+  consentVersion   String?
+  consentIp        String?
+  consentUserAgent String?
 
   status           String    // ApplicationStatus
   statusHistory    String?   // JSON array

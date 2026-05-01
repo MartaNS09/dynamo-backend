@@ -1,4 +1,6 @@
 import {
+  Equals,
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -61,6 +63,16 @@ export class CreateApplicationDto {
   @IsOptional()
   @IsString()
   sectionName?: string;
+
+  @IsBoolean()
+  @Equals(true, {
+    message: 'Требуется согласие на обработку персональных данных',
+  })
+  consentGiven: boolean;
+
+  @IsOptional()
+  @IsString()
+  consentVersion?: string;
 }
 
 export class UpdateApplicationStatusDto {

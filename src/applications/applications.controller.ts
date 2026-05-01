@@ -34,8 +34,21 @@ export class ApplicationsController {
   }
 
   @Post()
-  create(@Body() dto: CreateApplicationDto) {
-    return this.applicationsService.create(dto);
+  create(@Body() dto: CreateApplicationDto, @Req() req: any) {
+    const forwardedFor = req?.headers?.['x-forwarded-for'];
+    const consentIp =
+      typeof forwardedFor === 'string'
+        ? forwardedFor.split(',')[0]?.trim()
+        : req?.ip;
+    const consentUserAgent =
+      typeof req?.headers?.['user-agent'] === 'string'
+        ? req.headers['user-agent']
+        : undefined;
+
+    return this.applicationsService.create(dto, {
+      consentIp,
+      consentUserAgent,
+    });
   }
 
   @Patch(':id/status')

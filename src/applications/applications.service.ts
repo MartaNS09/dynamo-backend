@@ -10,6 +10,8 @@ import {
 export class ApplicationsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly defaultConsentVersion = '2026-05-01';
+
   private parseJsonField<T>(value: string | null): T | undefined {
     if (!value) {
       return undefined;
@@ -45,7 +47,10 @@ export class ApplicationsService {
     return this.mapApplication(row);
   }
 
-  async create(dto: CreateApplicationDto) {
+  async create(
+    dto: CreateApplicationDto,
+    meta?: { consentIp?: string; consentUserAgent?: string },
+  ) {
     const now = new Date().toISOString();
     const source = dto.source ?? 'enrollment_form';
     const created = await this.prisma.application.create({
@@ -62,6 +67,11 @@ export class ApplicationsService {
         source,
         sectionId: dto.sectionId,
         sectionName: dto.sectionName,
+        consentGiven: dto.consentGiven,
+        consentAt: dto.consentGiven ? new Date() : null,
+        consentVersion: dto.consentVersion ?? this.defaultConsentVersion,
+        consentIp: meta?.consentIp,
+        consentUserAgent: meta?.consentUserAgent,
         status: 'new',
         statusHistory: JSON.stringify([
           {
